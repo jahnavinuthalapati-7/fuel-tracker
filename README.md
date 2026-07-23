@@ -6,7 +6,7 @@ npm install
 npm start
 ```
 
-**First Time Setup:**
+** Setup:**
 1. Visit: `http://localhost:4000/api/check-setup`
 2. Then go to: `http://localhost:4000`
 
