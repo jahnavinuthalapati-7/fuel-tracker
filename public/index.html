@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    if (localStorage.getItem('token')) { 
+      window.location.href = '/dashboard.html';
+    } else {
+      window.location.href = '/login.html';
+    }
+  </script>
+</head>
+<body>Redirecting...</body>
+</html>

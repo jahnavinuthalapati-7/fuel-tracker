@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fuel Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="main-layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2> Fuel Tracker</h2>
+        <div class="user-info">User: <strong id="username"></strong>
+          <div class="user-role" id="userRole"></div>
+        </div>
+        <button class="logout-btn">Logout</button>
+      </div>
+      <nav>
+        <div class="nav-item active" onclick="switchPage(event, 'dashboard')"> Dashboard</div>
+        <div class="nav-item" onclick="switchPage(event, 'fuel-entry')"> Fuel Entry</div>
+        <div class="nav-item" onclick="switchPage(event, 'reports')"> Reports</div>
+        <div class="nav-item" onclick="switchPage(event, 'manage-users')"> Users</div>
+        <div class="nav-item" onclick="switchPage(event, 'change-password')"> Password</div>
+      </nav>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- DASHBOARD PAGE -->
+      <div id="dashboard" class="page active">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Real-time stock tracking by fuel type</p>
+        </div>
+        <div class="stats-grid" id="statsDiv"></div>
+        <div class="table-container">
+          <h3> Recent Entries</h3>
+          <input type="text" id="dashboardSearch" placeholder="Search Slip No, Vehicle, Fuel Type, Allocated To, Approved By...">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Slip No</th>
+                <th>Vehicle</th>
+                <th>Fuel</th>
+                <th>Qty</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recentTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FUEL ENTRY PAGE -->
+      <div id="fuel-entry" class="page">
+        <div class="page-header">
+          <h1>Add Fuel Entry</h1>
+          <p>Record PURCHASE or ISSUE transactions</p>
+        </div>
+        <div class="form-container">
+          <div class="tabs">
+            <button class="tab active" onclick="switchTab(event, 'purchaseTab')"> Purchase Fuel</button>
+            <button class="tab" onclick="switchTab(event, 'issueTab')"> Issue to Vehicle</button>
+          </div>
+
+          <!-- PURCHASE TAB -->
+          <div id="purchaseTab" class="tab-content active">
+            <form id="purchaseForm">
+              <div class="form-section">
+                <div class="form-section-title"> Transaction Details</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Slip No *</label><input type="text" id="slip_no_purchase" required></div>
+                  <div class="form-group"><label>Fuel Type *</label><select id="fuel_type_purchase" required><option value="">--Select--</option><option value="Diesel">Diesel</option><option value="Petrol">Petrol</option></select></div>
+                  <div class="form-group"><label>Stock Type *</label><select id="stock_type" required onchange="toggleStockInput()"><option value="">--Select--</option><option value="old">Old Stock</option><option value="new">New Stock</option></select></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group" id="stockInputGroup" style="display:none;"><label>Stock Amount (L)</label><input type="number" id="opening_stock" step="0.01"></div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"> Quantity & Cost</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Quantity (L) *</label><input type="number" id="quantity" step="0.01" required></div>
+                  <div class="form-group"><label>Rate (per L)</label><input type="number" id="rate" step="0.01"></div>
+                  <div class="form-group"><label>Amount (₹) - AUTO</label><input type="number" id="amount" step="0.01" readonly></div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"> Vendor</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Vendor Name</label><input type="text" id="vendor_name"></div>
+                  <div class="form-group"><label>Vendor Location</label><input type="text" id="vendor_location"></div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"> Approvals</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Approved By</label><input type="text" id="approved_by_p"></div>
+                  <div class="form-group"><label>Remarks</label><input type="text" id="remarks_p"></div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-success"> Save Purchase</button>
+                <button type="reset" class="btn btn-secondary"> Clear</button>
+              </div>
+            </form>
+            <div id="purchaseMsg" class="error-msg" style="display:none"></div>
+          </div>
+
+          <!-- ISSUE TAB -->
+          <div id="issueTab" class="tab-content">
+            <form id="issueForm">
+              <div class="form-section">
+                <div class="form-section-title"> Transaction Details</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Slip No *</label><input type="text" id="slip_no_issue" required></div>
+                  <div class="form-group"><label>Fuel Type *</label><select id="fuel_type_issue" required><option value="">--Select--</option><option value="Diesel">Diesel</option><option value="Petrol">Petrol</option></select></div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"> Vehicle Information</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Vehicle No *</label><input type="text" id="vehicle_no" required></div>
+                  <div class="form-group"><label>VIN No</label><input type="text" id="vin_no"></div>
+                  <div class="form-group"><label>Registration No</label><input type="text" id="registration_no"></div>
+                  <div class="form-group"><label>Model No</label><input type="text" id="model_no"></div>
+                  <div class="form-group"><label>Allocated To</label><select id="allocated_to"><option>Demo Car</option><option>Assigned Car</option><option>Customer Car</option><option>Loaner Car</option><option>Other</option></select></div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"> Odometer & Distance</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Opening Odometer</label><input type="number" id="opening_odometer" step="0.01"></div>
+                  <div class="form-group"><label>Closing Odometer</label><input type="number" id="closing_odometer" step="0.01"></div>
+                  <div class="form-group"><label>KM Run - AUTO</label><input type="number" id="km_run" step="0.01" readonly></div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"> Issue Quantity & Mileage</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Issue Quantity (L) *</label><input type="number" id="issue_quantity" step="0.01" required></div>
+                  <div class="form-group"><label>Mileage (KM/L) - AUTO</label><input type="number" id="mileage" step="0.01" readonly></div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">👤 Recipient & Approval</div>
+                <div class="form-row">
+                  <div class="form-group"><label>Recipient Name</label><input type="text" id="recipient_name"></div>
+                  <div class="form-group"><label>Receiver Name</label><input type="text" id="receiver_name"></div>
+                  <div class="form-group"><label>Approved By</label><input type="text" id="approved_by_i"></div>
+                  <div class="form-group"><label>Remarks</label><input type="text" id="remarks_i"></div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-success"> Save Issue</button>
+                <button type="reset" class="btn btn-secondary"> Clear</button>
+              </div>
+            </form>
+            <div id="issueMsg" class="error-msg" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS PAGE -->
+      <div id="reports" class="page">
+        <div class="page-header">
+          <h1>Reports & Export</h1>
+          <p>View, filter, and export transactions</p>
+        </div>
+        <div class="table-container">
+          <div class="filters">
+            <select id="filterFuelType"><option value="">All Fuel</option><option value="Diesel">Diesel</option><option value="Petrol">Petrol</option></select>
+            <select id="filterTransactionType"><option value="">All Type</option><option value="Purchase">Purchase</option><option value="Issue">Issue</option></select>
+            <input type="date" id="filterDateFrom">
+            <input type="date" id="filterDateTo">
+            <input type="text" id="searchBox" placeholder="Search...">
+            <div class="filter-buttons">
+              <button class="btn btn-primary" onclick="loadReports()"> Filter</button>
+              <button class="btn btn-secondary" onclick="clearFilters()"> Clear</button>
+            </div>
+          </div>
+
+          <div class="export-buttons">
+            <button class="export-btn export-excel" onclick="exportData('excel')"> Excel</button>
+            <button class="export-btn export-pdf" onclick="exportData('pdf')"> PDF</button>
+            <button class="export-btn export-word" onclick="exportData('word')"> Word</button>
+          </div>
+
+          <table style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Date</th><th>Slip</th><th>Type</th><th>Fuel</th><th>Vehicle No</th><th>VIN</th><th>Reg No</th><th>Model</th><th>Allocated</th><th>Opening Odo</th><th>Closing Odo</th><th>KM</th><th>Qty</th><th>Mileage</th><th>Approved By</th><th>Receiver</th><th>Remarks</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USERS PAGE -->
+      <div id="manage-users" class="page">
+        <div class="page-header">
+          <h1>Manage Users</h1>
+          <p>Create and manage system users</p>
+        </div>
+        <div class="form-container">
+          <div class="form-section">
+            <div class="form-section-title"> Create New User</div>
+            <form id="createUserForm">
+              <div class="form-row">
+                <div class="form-group"><label>Username</label><input type="text" id="newUsername" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="newPassword" required></div>
+                <div class="form-group"><label>Role</label><select id="newRole"><option value="User">User</option><option value="Admin">Admin</option></select></div>
+              </div>
+              <button type="submit" class="btn btn-success">Create User</button>
+            </form>
+            <div id="createUserMsg" class="error-msg" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="table-container" style="margin-top:30px">
+          <h3> All Users</h3>
+          <table>
+            <thead><tr><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="usersTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PASSWORD PAGE -->
+      <div id="change-password" class="page">
+        <div class="page-header">
+          <h1>Change Password</h1>
+          <p>Update your login password</p>
+        </div>
+        <div class="form-container" style="max-width:500px">
+          <form id="changePasswordForm">
+            <div class="form-group"><label>Old Password</label><input type="password" id="oldPassword" required></div>
+            <div class="form-group"><label>New Password</label><input type="password" id="newPasswordInput" required></div>
+            <div class="form-group"><label>Confirm Password</label><input type="password" id="confirmPassword" required></div>
+            <button type="submit" class="btn btn-success">Update Password</button>
+          </form>
+          <div id="changePasswordMsg" class="error-msg" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

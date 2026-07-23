@@ -1,0 +1,5 @@
+node_modules/
+fuel_tracker.db
+.DS_Store
+*.log
+.env
