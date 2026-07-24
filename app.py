@@ -15,7 +15,7 @@ SUPABASE_URL = "https://yccutkrmflxapwtjngep.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljY3V0a3JtZmx4YXB3dGpuZ2VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDM5MzEsImV4cCI6MjEwMDQxOTkzMX0.DsWCR0tYq895So5oJWD7Jwia_HRVxO09Y9rv2_Wns9w"
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ============ PAGE CONFIG ============
+# ============ PAGE  ============
 st.set_page_config(
     page_title="Fuel Tracker",
     layout="wide",
@@ -26,53 +26,70 @@ st.set_page_config(
 # ============  CSS  ============
 st.markdown("""
 <style>
-    /* Hide default Streamlit elements */
+    /* Hide default elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Main container padding */
+    /* Main container */
     .main {
         padding: 20px !important;
+        background-color: #f5f5f5 !important;
     }
     
-    /* Sidebar styling - dark like localhost */
+    /* Sidebar styling */
     [data-testid="stSidebar"] {
         background-color: #1a1f3a !important;
         padding: 20px !important;
     }
     
-    [data-testid="stSidebar"] > div > div > div {
-        color: white !important;
+    [data-testid="stSidebar"] label {
+        color: #ddd !important;
+        font-weight: 600 !important;
     }
     
-    .sidebar-title {
-        color: white !important;
-        font-size: 24px !important;
-        font-weight: bold !important;
-        margin-bottom: 10px !important;
-    }
-    
-    /* Radio buttons styling */
+    /* Radio buttons */
     .stRadio > label {
         color: #ddd !important;
         font-weight: 600 !important;
-        padding: 10px 12px !important;
+        padding: 12px 15px !important;
         border-radius: 5px !important;
-        margin: 5px 0 !important;
+        margin: 8px 0 !important;
         display: block !important;
+        transition: all 0.3s !important;
     }
     
     .stRadio > label:hover {
-        background-color: rgba(102, 126, 234, 0.2) !important;
+        background-color: #667eea !important;
         color: white !important;
     }
     
-    /* Active radio button */
-    [data-baseweb="radio"] [aria-checked="true"] {
-        background-color: #667eea !important;
+    /* Input fields */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > select {
+        border-radius: 5px !important;
+        border: 2px solid #ddd !important;
+        padding: 10px !important;
     }
     
-    /* Metrics - Big and Bold */
+    /* Buttons */
+    .stButton > button {
+        background-color: #dc3545 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 5px !important;
+        padding: 10px 20px !important;
+        font-weight: 700 !important;
+        width: 100% !important;
+        transition: all 0.3s !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #c82333 !important;
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
+    }
+    
+    /* Metrics */
     [data-testid="stMetricValue"] {
         font-size: 32px !important;
         font-weight: bold !important;
@@ -86,7 +103,6 @@ st.markdown("""
         text-transform: uppercase !important;
     }
     
-    /* Cards/Containers */
     [data-testid="stMetric"] {
         background: white !important;
         padding: 20px !important;
@@ -95,22 +111,20 @@ st.markdown("""
         box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
     }
     
-    /* Tables styling */
+    /* Tables */
     [data-testid="stDataFrame"] {
         font-size: 13px !important;
     }
     
     table {
-        width: 100% !important;
-        border-collapse: collapse !important;
+        background-color: white !important;
     }
     
     th {
-        background-color: #f8f9fa !important;
-        color: #333 !important;
+        background-color: #667eea !important;
+        color: white !important;
         font-weight: 700 !important;
         padding: 12px !important;
-        border-bottom: 2px solid #ddd !important;
     }
     
     td {
@@ -120,47 +134,6 @@ st.markdown("""
     
     tbody tr:hover {
         background-color: #f9f9f9 !important;
-    }
-    
-    /* Buttons */
-    .stButton > button {
-        background-color: #667eea !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 5px !important;
-        padding: 10px 20px !important;
-        font-weight: 600 !important;
-        width: 100% !important;
-        transition: all 0.3s !important;
-    }
-    
-    .stButton > button:hover {
-        background-color: #5568d3 !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
-    }
-    
-    /* Danger button override */
-    .stButton > button[kind="secondary"] {
-        background-color: #dc3545 !important;
-    }
-    
-    /* Input fields */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div > select {
-        border-radius: 5px !important;
-        border: 1px solid #ddd !important;
-        padding: 10px !important;
-    }
-    
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px !important;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 5px 5px 0px 0px !important;
-        padding: 10px 20px !important;
     }
     
     /* Messages */
@@ -185,6 +158,24 @@ st.markdown("""
         padding: 12px !important;
     }
     
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px !important;
+        background-color: white !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 5px 5px 0px 0px !important;
+        padding: 12px 20px !important;
+        color: #666 !important;
+        font-weight: 600 !important;
+    }
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        color: #667eea !important;
+        border-bottom: 3px solid #667eea !important;
+    }
+    
     /* Headers */
     h1 {
         color: #2c3e50 !important;
@@ -195,13 +186,10 @@ st.markdown("""
     h2 {
         color: #2c3e50 !important;
         font-size: 24px !important;
-        margin-top: 20px !important;
     }
     
     h3 {
         color: #666 !important;
-        font-size: 14px !important;
-        font-weight: normal !important;
     }
     
     /* Divider */
@@ -217,7 +205,7 @@ st.markdown("""
 if 'user' not in st.session_state:
     st.session_state.user = None
 
-# ============ EXPORT FUNCTIONS ============
+# ============ EXPORT  ============
 def export_to_excel(data):
     wb = Workbook()
     ws = wb.active
@@ -332,12 +320,12 @@ def export_to_word(data):
     output.seek(0)
     return output.getvalue()
 
-# ============ LOGIN PAGE ============
+# ============ LOGIN  ============
 if st.session_state.user is None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h1 style='text-align: center;'> Fuel Tracker</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: #7f8c8d;'>Fuel Entry & Management System</h3>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #2c3e50;'> Fuel Tracker</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #666;'>Fuel Entry & Management System</h3>", unsafe_allow_html=True)
         st.markdown("---")
         
         username = st.text_input("Username", key="login_user")
@@ -349,7 +337,7 @@ if st.session_state.user is None:
                 
                 if response.data and len(response.data) > 0:
                     user = response.data[0]
-                    if user['password'] == password:  # NOTE: Use proper hashing in production!
+                    if user['password'] == password:
                         st.session_state.user = user
                         st.success(" Login successful!")
                         st.rerun()
@@ -381,7 +369,7 @@ else:
             key="page_radio"
         )
     
-    # ============ DASHBOARD PAGE ============
+    # ============ DASHBOARD  ============
     if page == " Dashboard":
         st.title(" Dashboard")
         st.write("Real-time stock tracking by fuel type")
@@ -431,6 +419,28 @@ else:
                 display_cols = ['date', 'transaction_type', 'slip_no', 'vehicle_no', 'fuel_type', 'quantity', 'issue_quantity', 'approved_by']
                 display_cols = [col for col in display_cols if col in df.columns]
                 st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
+                
+                # DELETE SECTION
+                st.markdown("---")
+                st.subheader(" Delete Entries")
+                delete_col1, delete_col2, delete_col3 = st.columns([2, 2, 1])
+                with delete_col1:
+                    slip_to_delete = st.selectbox("Select Slip No to delete:", df['slip_no'].unique(), key="delete_slip")
+                with delete_col2:
+                    entry_to_delete = st.selectbox("Transaction Type:", df['transaction_type'].unique(), key="delete_type")
+                with delete_col3:
+                    st.write("")
+                    if st.button(" Delete", use_container_width=True, key="delete_btn"):
+                        try:
+                            entry_id = df[(df['slip_no'] == slip_to_delete) & (df['transaction_type'] == entry_to_delete)]['id'].values
+                            if len(entry_id) > 0:
+                                supabase_client.table('fuel_entries').delete().eq('id', int(entry_id[0])).execute()
+                                st.success(" Entry deleted successfully!")
+                                st.rerun()
+                            else:
+                                st.error(" Entry not found")
+                        except Exception as e:
+                            st.error(f" Error deleting: {e}")
             else:
                 st.info(" No entries found")
                 
@@ -501,9 +511,13 @@ else:
                             'remarks': remarks
                         }).execute()
                         st.success(" Purchase saved successfully!")
+                        st.balloons()
                         st.rerun()
                     except Exception as e:
-                        st.error(f" Error: {e}")
+                        if "duplicate key" in str(e).lower():
+                            st.warning(" This Slip No already exists as a Purchase. Try a different number or use Issue tab for different transaction.")
+                        else:
+                            st.error(f"Error: {str(e)}")
         
         with tab2:
             st.subheader(" Issue to Vehicle")
@@ -572,11 +586,15 @@ else:
                             'remarks': remarks
                         }).execute()
                         st.success(" Issue saved successfully!")
+                        st.balloons()
                         st.rerun()
                     except Exception as e:
-                        st.error(f" Error: {e}")
+                        if "duplicate key" in str(e).lower():
+                            st.warning(" This Slip No already exists as an Issue. Try a different number or use Purchase tab for different transaction.")
+                        else:
+                            st.error(f"Error: {str(e)}")
     
-    # ============ REPORTS  ============
+    # ============ REPORTS PAGE ============
     elif page == " Reports":
         st.title(" Reports & Export")
         st.write("View, filter, and export transactions")
@@ -632,7 +650,7 @@ else:
                 else:
                     st.info(" No entries found")
             except Exception as e:
-                st.error(f"❌ Error: {e}")
+                st.error(f" Error: {e}")
     
     # ============ USERS PAGE ============
     elif page == " Users":
@@ -655,7 +673,7 @@ else:
                 try:
                     supabase_client.table('users').insert({
                         'username': new_username,
-                        'password': new_password, 
+                        'password': new_password,
                         'role': new_role
                     }).execute()
                     st.success(" User created!")
