@@ -26,21 +26,27 @@ if st.session_state.user is None:
         password = st.text_input("Password", type="password", key="login_pass")
         
         if st.button("Login", use_container_width=True):
+            st.write(f"DEBUG - Username entered: '{username}'")
+            st.write(f"DEBUG - Password entered: '{password}'")
+            
             try:
-                # Query database
                 response = supabase_client.table('users').select('*').eq('username', username).execute()
+                
+                st.write(f"DEBUG - Query result: {response.data}")
                 
                 if response.data and len(response.data) > 0:
                     user = response.data[0]
-                    # Compare plain text password
+                    st.write(f"DEBUG - Stored password: '{user['password']}'")
+                    st.write(f"DEBUG - Match: {user['password'] == password}")
+                    
                     if user['password'] == password:
                         st.session_state.user = user
                         st.success("Login successful!")
                         st.rerun()
                     else:
-                        st.error("Invalid credentials")
+                        st.error("Invalid credentials - Password mismatch")
                 else:
-                    st.error("Invalid credentials")
+                    st.error("Invalid credentials - User not found")
             except Exception as e:
                 st.error(f"Error: {str(e)}")
 
