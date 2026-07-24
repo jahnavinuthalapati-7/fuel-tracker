@@ -2,7 +2,7 @@ import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
 from datetime import datetime
-import hashlib
+import hashlib 
 
 # Supabase credentials
 SUPABASE_URL = "https://yccutkrmflxapwtjngep.supabase.co"
@@ -29,7 +29,7 @@ def login_user(username, password):
         response = supabase_client.table('users').select('*').eq('username', username).execute()
         if response.data and len(response.data) > 0:
             user = response.data[0]
-            if user['password'] == hash_password(password):
+            if user['password'] == password:
                 return user
         return None
     except Exception as e:
