@@ -2,7 +2,12 @@ import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
 from datetime import datetime
-import hashlib
+import io
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
 
 # Supabase Setup
 SUPABASE_URL = "https://yccutkrmflxapwtjngep.supabase.co"
@@ -12,62 +17,14 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.set_page_config(page_title="Fuel Tracker", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for beautiful interface
+# Custom CSS - Beautiful Styling
 st.markdown("""
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f5f5f5;
-    }
-    .sidebar .sidebar-content {
-        background-color: #2c3e50;
-    }
-    .metric-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #3498db;
-        margin: 10px 0;
-    }
-    .form-section {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 15px 0;
-    }
-    .form-section-title {
-        color: #3498db;
-        font-weight: bold;
-        margin-bottom: 15px;
-        font-size: 16px;
-    }
-    .btn-success {
-        background-color: #27ae60;
-        color: white;
-    }
-    .btn-danger {
-        background-color: #e74c3c;
-        color: white;
-    }
-    .category-badge {
-        padding: 5px 10px;
-        border-radius: 20px; 
-        font-size: 12px;
-        font-weight: bold;
-    }
-    .category-purchase {
-        background-color: #3498db;
-        color: white;
-    }
-    .category-issue {
-        background-color: #f39c12;
-        color: white;
-    }
+    [data-testid="stMetricValue"] { font-size: 28px; }
+    .metric-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; }
+    .success-btn { background-color: #27ae60 !important; }
+    .danger-btn { background-color: #e74c3c !important; }
+    .info-box { background-color: #3498db; color: white; padding: 15px; border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -75,13 +32,114 @@ st.markdown("""
 if 'user' not in st.session_state:
     st.session_state.user = None
 
+# Export Functions
+def export_to_excel(data):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Fuel Entries"
+    
+    headers = ["Date", "Type", "Slip No", "Fuel Type", "Quantity", "Amount", "Vehicle No", "Approved By"]
+    ws.append(headers)
+    
+    header_fill = PatternFill(start_color="3498db", end_color="3498db", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+    
+    for row in data:
+        ws.append([
+            row.get('date', ''),
+            row.get('transaction_type', ''),
+            row.get('slip_no', ''),
+            row.get('fuel_type', ''),
+            row.get('quantity', ''),
+            row.get('amount', ''),
+            row.get('vehicle_no', ''),
+            row.get('approved_by', '')
+        ])
+    
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+def export_to_pdf(data):
+    output = io.BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title = Paragraph("Fuel Tracker Report", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    table_data = [["Date", "Type", "Slip No", "Fuel", "Qty", "Amount", "Vehicle", "Approved By"]]
+    
+    for row in data:
+        table_data.append([
+            str(row.get('date', '')),
+            str(row.get('transaction_type', '')),
+            str(row.get('slip_no', '')),
+            str(row.get('fuel_type', '')),
+            str(row.get('quantity', '')),
+            str(row.get('amount', '')),
+            str(row.get('vehicle_no', '')),
+            str(row.get('approved_by', ''))
+        ])
+    
+    table = Table(table_data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), '#3498db'),
+        ('TEXTCOLOR', (0, 0), (-1, 0), 'white'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, 'black')
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    output.seek(0)
+    return output.getvalue()
+
+def export_to_word(data):
+    from docx import Document
+    doc = Document()
+    doc.add_heading('Fuel Tracker Report', 0)
+    
+    table = doc.add_table(rows=1, cols=8)
+    table.style = 'Light Grid Accent 1'
+    hdr_cells = table.rows[0].cells
+    headers = ["Date", "Type", "Slip No", "Fuel", "Qty", "Amount", "Vehicle", "Approved By"]
+    
+    for i, header in enumerate(headers):
+        hdr_cells[i].text = header
+    
+    for row in data:
+        row_cells = table.add_row().cells
+        row_cells[0].text = str(row.get('date', ''))
+        row_cells[1].text = str(row.get('transaction_type', ''))
+        row_cells[2].text = str(row.get('slip_no', ''))
+        row_cells[3].text = str(row.get('fuel_type', ''))
+        row_cells[4].text = str(row.get('quantity', ''))
+        row_cells[5].text = str(row.get('amount', ''))
+        row_cells[6].text = str(row.get('vehicle_no', ''))
+        row_cells[7].text = str(row.get('approved_by', ''))
+    
+    output = io.BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
+
 # LOGIN PAGE
 if st.session_state.user is None:
-    st.title(" Fuel Tracker")
-    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h2 style='text-align: center;'>Login to your account</h2>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #2c3e50;'>⛽ Fuel Tracker</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #7f8c8d;'>Login to your account</h3>", unsafe_allow_html=True)
         
         username = st.text_input("Username", key="login_user")
         password = st.text_input("Password", type="password", key="login_pass")
@@ -94,45 +152,41 @@ if st.session_state.user is None:
                     user = response.data[0]
                     if user['password'] == password:
                         st.session_state.user = user
-                        st.success("Login successful!")
+                        st.success("✅ Login successful!")
                         st.rerun()
                     else:
-                        st.error("Invalid credentials")
+                        st.error("❌ Invalid credentials")
                 else:
-                    st.error("Invalid credentials")
+                    st.error("❌ Invalid credentials")
             except Exception as e:
-                st.error(f"Error: {str(e)}")
+                st.error(f"❌ Error: {str(e)}")
 
 # MAIN APP
 else:
-    # Sidebar
     with st.sidebar:
-        st.title(" Fuel Tracker")
-        st.write(f"**User:** {st.session_state.user['username']}")
-        st.write(f"**Role:** {st.session_state.user['role']}")
+        st.markdown("<h2 style='color: #2c3e50;'>⛽ Fuel Tracker</h2>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: #7f8c8d;'><b>User:</b> {st.session_state.user['username']}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: #7f8c8d;'><b>Role:</b> {st.session_state.user['role']}</p>", unsafe_allow_html=True)
         st.markdown("---")
         
-        if st.button("Logout", use_container_width=True):
+        if st.button("🔴 Logout", use_container_width=True):
             st.session_state.user = None
             st.rerun()
         
         st.markdown("---")
-        page = st.radio("Menu", [" Dashboard", " Fuel Entry", " Reports", " Users", " Password"])
+        page = st.radio("Menu", ["📊 Dashboard", "✏️ Fuel Entry", "📈 Reports", "👥 Users", "🔑 Password"])
     
-    # DASHBOARD PAGE
-    if page == " Dashboard":
-        st.title("Dashboard")
+    # DASHBOARD
+    if page == "📊 Dashboard":
+        st.title("📊 Dashboard")
         st.write("Real-time stock tracking by fuel type")
         
         try:
             entries = supabase_client.table('fuel_entries').select('*').execute()
             entries_data = entries.data if entries.data else []
             
-            # Calculate stats
-            diesel_entries = [e for e in entries_data if e['fuel_type'] == 'Diesel']
-            petrol_entries = [e for e in entries_data if e['fuel_type'] == 'Petrol']
-            
-            for fuel_type, fuel_entries in [('DIESEL', diesel_entries), ('PETROL', petrol_entries)]:
+            for fuel_type in ['Diesel', 'Petrol']:
+                fuel_entries = [e for e in entries_data if e['fuel_type'] == fuel_type]
                 old_stock = fuel_entries[0]['opening_stock'] if fuel_entries and fuel_entries[0]['opening_stock'] else 0
                 purchased = sum([e['quantity'] for e in fuel_entries if e['transaction_type'] == 'Purchase' and e['quantity']])
                 allocated = sum([e['issue_quantity'] for e in fuel_entries if e['transaction_type'] == 'Issue' and e['issue_quantity']])
@@ -140,7 +194,7 @@ else:
                 
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric(f"{fuel_type} Total", f"{total:.2f}L")
+                    st.metric(f"{fuel_type} Total", f"{total:.2f}L", delta=None)
                 with col2:
                     st.metric("Old Stock", f"{old_stock:.2f}L")
                 with col3:
@@ -149,8 +203,8 @@ else:
                     st.metric("Allocated", f"-{allocated:.2f}L")
             
             st.markdown("---")
-            st.subheader(" Recent Entries")
-            search = st.text_input("Search Slip No, Vehicle, Fuel Type...")
+            st.subheader("📋 Recent Entries")
+            search = st.text_input("🔍 Search Slip No, Vehicle, Fuel Type...")
             
             if search:
                 filtered = [e for e in entries_data if search.lower() in str(e).lower()]
@@ -166,65 +220,48 @@ else:
         except Exception as e:
             st.error(f"Error: {e}")
     
-    # FUEL ENTRY PAGE
-    elif page == " Fuel Entry":
-        st.title("Add Fuel Entry")
+    # FUEL ENTRY
+    elif page == "✏️ Fuel Entry":
+        st.title("✏️ Add Fuel Entry")
         st.write("Record PURCHASE or ISSUE transactions")
         
-        tab1, tab2 = st.tabs([" Purchase Fuel", " Issue to Vehicle"])
+        tab1, tab2 = st.tabs(["🛢️ Purchase Fuel", "🚗 Issue to Vehicle"])
         
         with tab1:
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Transaction Details</div>", unsafe_allow_html=True)
-            
             col1, col2, col3 = st.columns(3)
             with col1:
-                slip_no = st.text_input("Slip No *", key="slip_purchase")
+                slip_no = st.text_input("Slip No *", key="slip_p")
             with col2:
-                fuel_type = st.selectbox("Fuel Type *", ["Diesel", "Petrol"], key="fuel_purchase")
+                fuel_type = st.selectbox("Fuel Type *", ["Diesel", "Petrol"], key="fuel_p")
             with col3:
-                stock_type = st.selectbox("Stock Type *", ["New Stock", "Old Stock"], key="stock_purchase")
+                stock_type = st.selectbox("Stock Type *", ["New Stock", "Old Stock"], key="st_p")
             
             opening_stock = None
             if stock_type == "Old Stock":
-                opening_stock = st.number_input("Stock Amount (L)", min_value=0.0, step=0.01, key="opening_stock")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Quantity & Cost</div>", unsafe_allow_html=True)
+                opening_stock = st.number_input("Stock Amount (L)", min_value=0.0, step=0.01, key="os_p")
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                quantity = st.number_input("Quantity (L) *", min_value=0.0, step=0.01, key="qty_purchase")
+                quantity = st.number_input("Quantity (L) *", min_value=0.0, step=0.01, key="qty_p")
             with col2:
-                rate = st.number_input("Rate (per L)", min_value=0.0, step=0.01, key="rate_purchase")
+                rate = st.number_input("Rate (per L)", min_value=0.0, step=0.01, key="rate_p")
             with col3:
                 amount = quantity * rate
                 st.metric("Amount (₹)", f"{amount:.2f}")
             
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Vendor</div>", unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                vendor_name = st.text_input("Vendor Name", key="vn_p")
+            with col2:
+                vendor_location = st.text_input("Vendor Location", key="vl_p")
             
             col1, col2 = st.columns(2)
             with col1:
-                vendor_name = st.text_input("Vendor Name", key="vendor_name_p")
+                approved_by = st.text_input("Approved By", key="ab_p")
             with col2:
-                vendor_location = st.text_input("Vendor Location", key="vendor_loc_p")
+                remarks = st.text_input("Remarks", key="rm_p")
             
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Approvals</div>", unsafe_allow_html=True)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                approved_by = st.text_input("Approved By", key="approved_p")
-            with col2:
-                remarks = st.text_input("Remarks", key="remarks_p")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-            if st.button(" Save Purchase", use_container_width=True, key="save_purchase"):
+            if st.button("✅ Save Purchase", use_container_width=True, key="save_p"):
                 try:
                     supabase_client.table('fuel_entries').insert({
                         'slip_no': slip_no,
@@ -240,50 +277,35 @@ else:
                         'approved_by': approved_by,
                         'remarks': remarks
                     }).execute()
-                    st.success(" Entry saved!")
+                    st.success("✅ Purchase saved!")
                 except Exception as e:
                     st.error(f"Error: {e}")
         
         with tab2:
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Transaction Details</div>", unsafe_allow_html=True)
-            
             col1, col2 = st.columns(2)
             with col1:
-                slip_no = st.text_input("Slip No *", key="slip_issue")
+                slip_no = st.text_input("Slip No *", key="slip_i")
             with col2:
-                fuel_type = st.selectbox("Fuel Type *", ["Diesel", "Petrol"], key="fuel_issue")
+                fuel_type = st.selectbox("Fuel Type *", ["Diesel", "Petrol"], key="fuel_i")
             
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Vehicle Information</div>", unsafe_allow_html=True)
-            
-            vehicle_no = st.text_input("Vehicle No *", key="vehicle_no")
-            vin_no = st.text_input("VIN No", key="vin_no")
-            registration_no = st.text_input("Registration No", key="reg_no")
-            model_no = st.text_input("Model No", key="model_no")
-            allocated_to = st.selectbox("Allocated To", ["Demo Car", "Assigned Car", "Customer Car", "Loaner Car", "Other"], key="allocated")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Odometer & Distance</div>", unsafe_allow_html=True)
+            vehicle_no = st.text_input("Vehicle No *", key="vehicle_i")
+            vin_no = st.text_input("VIN No", key="vin_i")
+            registration_no = st.text_input("Registration No", key="reg_i")
+            model_no = st.text_input("Model No", key="model_i")
+            allocated_to = st.selectbox("Allocated To", ["Demo Car", "Assigned Car", "Customer Car", "Loaner Car", "Other"], key="alloc_i")
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                opening_odo = st.number_input("Opening Odometer", min_value=0.0, step=0.01, key="opening_odo")
+                opening_odo = st.number_input("Opening Odometer", min_value=0.0, step=0.01, key="odo_o_i")
             with col2:
-                closing_odo = st.number_input("Closing Odometer", min_value=0.0, step=0.01, key="closing_odo")
+                closing_odo = st.number_input("Closing Odometer", min_value=0.0, step=0.01, key="odo_c_i")
             with col3:
                 km_run = closing_odo - opening_odo
                 st.metric("KM Run", f"{km_run:.2f}")
             
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Issue Quantity & Mileage</div>", unsafe_allow_html=True)
-            
             col1, col2 = st.columns(2)
             with col1:
-                issue_quantity = st.number_input("Issue Quantity (L) *", min_value=0.0, step=0.01, key="issue_qty")
+                issue_quantity = st.number_input("Issue Quantity (L) *", min_value=0.0, step=0.01, key="iq_i")
             with col2:
                 if issue_quantity > 0:
                     mileage = km_run / issue_quantity
@@ -291,25 +313,17 @@ else:
                 else:
                     mileage = 0
             
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section'>", unsafe_allow_html=True)
-            st.markdown("<div class='form-section-title'> Recipient & Approval</div>", unsafe_allow_html=True)
-            
-            col1, col2 = st.columns(2)
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                recipient_name = st.text_input("Recipient Name", key="recipient_name")
+                recipient_name = st.text_input("Recipient Name", key="rec_i")
             with col2:
-                receiver_name = st.text_input("Receiver Name", key="receiver_name")
+                receiver_name = st.text_input("Receiver Name", key="recv_i")
+            with col3:
+                approved_by = st.text_input("Approved By", key="ab_i")
+            with col4:
+                remarks = st.text_input("Remarks", key="rm_i")
             
-            col1, col2 = st.columns(2)
-            with col1:
-                approved_by = st.text_input("Approved By", key="approved_i")
-            with col2:
-                remarks = st.text_input("Remarks", key="remarks_i")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-            if st.button(" Save Issue", use_container_width=True, key="save_issue"):
+            if st.button("✅ Save Issue", use_container_width=True, key="save_i"):
                 try:
                     supabase_client.table('fuel_entries').insert({
                         'slip_no': slip_no,
@@ -331,26 +345,26 @@ else:
                         'approved_by': approved_by,
                         'remarks': remarks
                     }).execute()
-                    st.success(" Entry saved!")
+                    st.success("✅ Issue saved!")
                 except Exception as e:
                     st.error(f"Error: {e}")
     
-    # REPORTS PAGE
-    elif page == " Reports":
-        st.title("Reports & Export")
+    # REPORTS
+    elif page == "📈 Reports":
+        st.title("📈 Reports & Export")
         st.write("View, filter, and export transactions")
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            fuel_filter = st.selectbox("Fuel Type", ["All", "Diesel", "Petrol"])
+            fuel_filter = st.selectbox("Fuel Type", ["All", "Diesel", "Petrol"], key="ff_r")
         with col2:
-            type_filter = st.selectbox("Transaction Type", ["All", "Purchase", "Issue"])
+            type_filter = st.selectbox("Transaction Type", ["All", "Purchase", "Issue"], key="tf_r")
         with col3:
-            date_from = st.date_input("From Date")
+            date_from = st.date_input("From Date", key="df_r")
         with col4:
-            date_to = st.date_input("To Date")
+            date_to = st.date_input("To Date", key="dt_r")
         
-        if st.button(" Filter", use_container_width=True):
+        if st.button("🔍 Filter", use_container_width=True, key="filter_r"):
             try:
                 entries = supabase_client.table('fuel_entries').select('*').execute()
                 if entries.data:
@@ -362,55 +376,70 @@ else:
                         df = df[df['transaction_type'] == type_filter]
                     
                     st.dataframe(df, use_container_width=True)
+                    
+                    # Export Buttons
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        excel_data = export_to_excel(entries.data)
+                        st.download_button("📊 Export Excel", excel_data, "fuel_report.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    with col2:
+                        pdf_data = export_to_pdf(entries.data)
+                        st.download_button("📄 Export PDF", pdf_data, "fuel_report.pdf", "application/pdf")
+                    with col3:
+                        word_data = export_to_word(entries.data)
+                        st.download_button("📝 Export Word", word_data, "fuel_report.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
                 else:
                     st.info("No entries")
             except Exception as e:
                 st.error(f"Error: {e}")
     
-    # USERS PAGE
+    # USERS
     elif page == "👥 Users":
-        st.title("Manage Users")
+        st.title("👥 Manage Users")
         
-        st.subheader(" Create New User")
+        st.subheader("➕ Create New User")
         col1, col2, col3 = st.columns(3)
         with col1:
-            new_username = st.text_input("Username", key="new_user")
+            new_username = st.text_input("Username", key="nu")
         with col2:
-            new_password = st.text_input("Password", type="password", key="new_pass")
+            new_password = st.text_input("Password", type="password", key="np")
         with col3:
-            new_role = st.selectbox("Role", ["User", "Admin"], key="new_role")
+            new_role = st.selectbox("Role", ["User", "Admin"], key="nr")
         
-        if st.button("Create User", use_container_width=True):
+        if st.button("Create User", use_container_width=True, key="cu"):
             try:
                 supabase_client.table('users').insert({
                     'username': new_username,
                     'password': new_password,
                     'role': new_role
                 }).execute()
-                st.success(" User created!")
+                st.success("✅ User created!")
             except Exception as e:
                 st.error(f"Error: {e}")
         
+        st.markdown("---")
         st.subheader("👥 All Users")
         try:
             users = supabase_client.table('users').select('*').execute()
             if users.data:
                 df = pd.DataFrame(users.data)
                 st.dataframe(df[['username', 'role', 'created_at']], use_container_width=True)
+            else:
+                st.info("No users")
         except Exception as e:
             st.error(f"Error: {e}")
     
-    # PASSWORD PAGE
-    elif page == " Password":
-        st.title("Change Password")
+    # PASSWORD
+    elif page == "🔑 Password":
+        st.title("🔑 Change Password")
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            old_password = st.text_input("Old Password", type="password", key="old_pass")
-            new_password = st.text_input("New Password", type="password", key="new_password")
-            confirm_password = st.text_input("Confirm Password", type="password", key="confirm_pass")
+            old_password = st.text_input("Old Password", type="password", key="op")
+            new_password = st.text_input("New Password", type="password", key="np_c")
+            confirm_password = st.text_input("Confirm Password", type="password", key="cp")
             
-            if st.button("Update Password", use_container_width=True):
+            if st.button("Update Password", use_container_width=True, key="up"):
                 if new_password != confirm_password:
                     st.error("Passwords do not match")
                 else:
@@ -420,7 +449,7 @@ else:
                             supabase_client.table('users').update({
                                 'password': new_password
                             }).eq('id', st.session_state.user['id']).execute()
-                            st.success(" Password changed!")
+                            st.success("✅ Password changed!")
                         else:
                             st.error("Old password incorrect")
                     except Exception as e:
