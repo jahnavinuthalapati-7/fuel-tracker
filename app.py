@@ -1,14 +1,19 @@
 import streamlit as st
-import requests
+import supabase
+from supabase import create_client, Client
 import pandas as pd
 from datetime import datetime
-import json
+import hashlib
+
+# Supabase credentials
+SUPABASE_URL = "https://yccutkrmflxapwtjngep.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljY3V0a3JtZmx4YXB3dGpuZ2VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDM5MzEsImV4cCI6MjEwMDQxOTkzMX0.DsWCR0tYq895So5oJWD7Jwia_HRVxO09Y9rv2_Wns9w"
+
+# Initialize Supabase client
+supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Page config
 st.set_page_config(page_title="Fuel Tracker", layout="wide", initial_sidebar_state="expanded")
-
-# API Base URL - Change this to your backend URL
-API_URL = "http://localhost:4000/api"
 
 # Initialize session state
 if 'token' not in st.session_state:
@@ -17,35 +22,86 @@ if 'user' not in st.session_state:
     st.session_state.user = None
 
 # Helper functions
-def api_call(endpoint, method="GET", data=None):
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.session_state.token}" if st.session_state.token else ""
-    }
-    
-    url = f"{API_URL}{endpoint}"
-    
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def login_user(username, password):
     try:
-        if method == "GET":
-            response = requests.get(url, headers=headers)
-        elif method == "POST":
-            response = requests.post(url, json=data, headers=headers)
-        elif method == "DELETE":
-            response = requests.delete(url, headers=headers)
-        
-        if response.status_code == 401:
-            st.session_state.token = None
-            st.session_state.user = None
-            st.rerun()
-        
-        return response.json() if response.ok else None
+        response = supabase_client.table('users').select('*').eq('username', username).execute()
+        if response.data and len(response.data) > 0:
+            user = response.data[0]
+            if user['password'] == hash_password(password):
+                return user
+        return None
     except Exception as e:
-        st.error(f"API Error: {e}")
+        st.error(f"Error: {e}")
         return None
 
-# Login Page
+def create_new_user(username, password, role):
+    try:
+        response = supabase_client.table('users').insert({
+            'username': username,
+            'password': hash_password(password),
+            'role': role
+        }).execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return None
+
+def get_fuel_entries():
+    try:
+        response = supabase_client.table('fuel_entries').select('*').order('date', desc=True).execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return []
+
+def add_fuel_entry(data):
+    try:
+        response = supabase_client.table('fuel_entries').insert(data).execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return None
+
+def delete_fuel_entry(id):
+    try:
+        response = supabase_client.table('fuel_entries').delete().eq('id', id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return False
+
+def get_dashboard_stats():
+    try:
+        entries = get_fuel_entries()
+        fuels = ['Diesel', 'Petrol']
+        stats = []
+        
+        for fuel in fuels:
+            fuel_entries = [e for e in entries if e['fuel_type'] == fuel]
+            old_stock = fuel_entries[0]['opening_stock'] if fuel_entries and fuel_entries[0]['opening_stock'] else 0
+            purchased = sum([e['quantity'] for e in fuel_entries if e['transaction_type'] == 'Purchase' and e['quantity']])
+            allocated = sum([e['issue_quantity'] for e in fuel_entries if e['transaction_type'] == 'Issue' and e['issue_quantity']])
+            total = old_stock + purchased - allocated
+            
+            stats.append({
+                'fuel_type': fuel,
+                'old_stock': old_stock,
+                'purchased': purchased,
+                'allocated': allocated,
+                'total_stock': total
+            })
+        
+        return stats
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return []
+
+# LOGIN PAGE
 if not st.session_state.token:
-    st.title(" Fuel Tracker Login")
+    st.title("Fuel Tracker Login")
     
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -56,18 +112,19 @@ if not st.session_state.token:
         password = st.text_input("Password", type="password")
         
         if st.button("Login", use_container_width=True):
-            response = api_call("/login", "POST", {"username": username, "password": password})
+            user = login_user(username, password)
             
-            if response and response.get('token'):
-                st.session_state.token = response['token']
-                st.session_state.user = response['user']
+            if user:
+                st.session_state.token = "logged_in"
+                st.session_state.user = user
                 st.success("Login successful!")
                 st.rerun()
             else:
                 st.error("Invalid credentials")
+
 else:
-    # Main App
-    st.sidebar.title(f" Fuel Tracker")
+    # MAIN APP
+    st.sidebar.title("Fuel Tracker")
     st.sidebar.write(f"**User:** {st.session_state.user['username']}")
     st.sidebar.write(f"**Role:** {st.session_state.user['role']}")
     
@@ -77,38 +134,36 @@ else:
         st.rerun()
     
     # Navigation
-    page = st.sidebar.radio("Menu", [" Dashboard", " Fuel Entry", " Reports", " Users", " Password"])
+    page = st.sidebar.radio("Menu", ["Dashboard", "Fuel Entry", "Reports", "Users", "Password"])
     
     # DASHBOARD PAGE
-    if page == " Dashboard":
+    if page == "Dashboard":
         st.title("Dashboard")
         st.write("Real-time stock tracking by fuel type")
         
-        dashboard = api_call("/dashboard")
-        if dashboard:
-            stats = dashboard.get('stats', [])
-            
-            cols = st.columns(len(stats))
-            for idx, stat in enumerate(stats):
-                with cols[idx]:
-                    st.metric(
-                        label=stat['fuel_type'],
-                        value=f"{stat['total_stock']:.2f}L",
-                        delta=f"Old: {stat.get('old_stock', 0):.2f}L | Purchased: {stat.get('purchased', 0):.2f}L"
-                    )
+        stats = get_dashboard_stats()
         
-        st.subheader(" Recent Entries")
-        entries = api_call("/fuel-entries")
+        cols = st.columns(len(stats))
+        for idx, stat in enumerate(stats):
+            with cols[idx]:
+                st.metric(
+                    label=stat['fuel_type'],
+                    value=f"{stat['total_stock']:.2f}L",
+                    delta=f"Old: {stat['old_stock']:.2f}L | Purchase: {stat['purchased']:.2f}L | Allocated: {stat['allocated']:.2f}L"
+                )
+        
+        st.subheader("Recent Entries")
+        entries = get_fuel_entries()
         if entries:
             df = pd.DataFrame(entries[:10])
             st.dataframe(df[['date', 'transaction_type', 'slip_no', 'fuel_type', 'quantity', 'issue_quantity']], use_container_width=True)
     
     # FUEL ENTRY PAGE
-    elif page == " Fuel Entry":
+    elif page == "Fuel Entry":
         st.title("Add Fuel Entry")
         st.write("Record PURCHASE or ISSUE transactions")
         
-        tab1, tab2 = st.tabs([" Purchase Fuel", " Issue to Vehicle"])
+        tab1, tab2 = st.tabs(["Purchase Fuel", "Issue to Vehicle"])
         
         with tab1:
             st.subheader("Purchase Fuel")
@@ -121,10 +176,9 @@ else:
             with col3:
                 stock_type = st.selectbox("Stock Type *", ["New Stock", "Old Stock"], key="stock_purchase")
             
+            opening_stock = None
             if stock_type == "Old Stock":
                 opening_stock = st.number_input("Stock Amount (L)", min_value=0.0, step=0.01, key="opening_stock")
-            else:
-                opening_stock = None
             
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -133,7 +187,7 @@ else:
                 rate = st.number_input("Rate (per L)", min_value=0.0, step=0.01, key="rate_purchase")
             with col3:
                 amount = quantity * rate
-                st.metric("Amount (₹)", f"{amount:.2f}")
+                st.metric("Amount", f"{amount:.2f}")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -147,7 +201,7 @@ else:
             with col2:
                 remarks = st.text_input("Remarks", key="remarks_p")
             
-            if st.button(" Save Purchase", use_container_width=True, key="save_purchase"):
+            if st.button("Save Purchase", use_container_width=True, key="save_purchase"):
                 data = {
                     "slip_no": slip_no,
                     "transaction_type": "Purchase",
@@ -163,11 +217,11 @@ else:
                     "remarks": remarks
                 }
                 
-                response = api_call("/fuel-entry", "POST", data)
-                if response and response.get('success'):
-                    st.success(" Entry saved!")
+                response = add_fuel_entry(data)
+                if response:
+                    st.success("Entry saved!")
                 else:
-                    st.error(" Error saving entry")
+                    st.error("Error saving entry")
         
         with tab2:
             st.subheader("Issue to Vehicle")
@@ -219,7 +273,7 @@ else:
             with col4:
                 remarks = st.text_input("Remarks", key="remarks_i")
             
-            if st.button(" Save Issue", use_container_width=True, key="save_issue"):
+            if st.button("Save Issue", use_container_width=True, key="save_issue"):
                 data = {
                     "slip_no": slip_no,
                     "transaction_type": "Issue",
@@ -241,14 +295,14 @@ else:
                     "remarks": remarks
                 }
                 
-                response = api_call("/fuel-entry", "POST", data)
-                if response and response.get('success'):
-                    st.success(" Entry saved!")
+                response = add_fuel_entry(data)
+                if response:
+                    st.success("Entry saved!")
                 else:
-                    st.error(" Error saving entry")
+                    st.error("Error saving entry")
     
     # REPORTS PAGE
-    elif page == " Reports":
+    elif page == "Reports":
         st.title("Reports & Export")
         st.write("View, filter, and export transactions")
         
@@ -262,8 +316,8 @@ else:
         with col4:
             date_to = st.date_input("To Date")
         
-        if st.button(" Filter", use_container_width=True):
-            entries = api_call("/fuel-entries")
+        if st.button("Filter", use_container_width=True):
+            entries = get_fuel_entries()
             if entries:
                 df = pd.DataFrame(entries)
                 
@@ -275,10 +329,10 @@ else:
                 st.dataframe(df, use_container_width=True)
     
     # USERS PAGE
-    elif page == " Users":
+    elif page == "Users":
         st.title("Manage Users")
         
-        st.subheader(" Create New User")
+        st.subheader("Create New User")
         col1, col2, col3 = st.columns(3)
         with col1:
             new_username = st.text_input("Username")
@@ -288,24 +342,23 @@ else:
             new_role = st.selectbox("Role", ["User", "Admin"])
         
         if st.button("Create User", use_container_width=True):
-            response = api_call("/users", "POST", {
-                "username": new_username,
-                "password": new_password,
-                "role": new_role
-            })
-            if response and response.get('success'):
-                st.success(" User created!")
+            response = create_new_user(new_username, new_password, new_role)
+            if response:
+                st.success("User created!")
             else:
-                st.error(" Error creating user")
+                st.error("Error creating user")
         
-        st.subheader(" All Users")
-        users = api_call("/users")
-        if users:
-            df = pd.DataFrame(users)
-            st.dataframe(df[['username', 'role', 'created_at']], use_container_width=True)
+        st.subheader("All Users")
+        try:
+            users = supabase_client.table('users').select('*').execute()
+            if users.data:
+                df = pd.DataFrame(users.data)
+                st.dataframe(df[['username', 'role', 'created_at']], use_container_width=True)
+        except Exception as e:
+            st.error(f"Error: {e}")
     
     # PASSWORD PAGE
-    elif page == " Password":
+    elif page == "Password":
         st.title("Change Password")
         
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -316,13 +369,16 @@ else:
             
             if st.button("Update Password", use_container_width=True):
                 if new_password != confirm_password:
-                    st.error(" Passwords do not match")
+                    st.error("Passwords do not match")
                 else:
-                    response = api_call("/change-password", "POST", {
-                        "oldPassword": old_password,
-                        "newPassword": new_password
-                    })
-                    if response and response.get('success'):
-                        st.success(" Password changed!")
-                    else:
-                        st.error(" Error changing password") 
+                    try:
+                        user = login_user(st.session_state.user['username'], old_password)
+                        if user:
+                            supabase_client.table('users').update({
+                                'password': hash_password(new_password)
+                            }).eq('id', st.session_state.user['id']).execute()
+                            st.success("Password changed!")
+                        else:
+                            st.error("Old password incorrect")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
