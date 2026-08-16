@@ -10,12 +10,12 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from docx import Document
 
-# ============ SUPABASE  ============
+# ============ SUPABASE CONFIG ============
 SUPABASE_URL = "https://yccutkrmflxapwtjngep.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljY3V0a3JtZmx4YXB3dGpuZ2VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDM5MzEsImV4cCI6MjEwMDQxOTkzMX0.DsWCR0tYq895So5oJWD7Jwia_HRVxO09Y9rv2_Wns9w"
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ============ PAGE  ============
+# ============ PAGE CONFIG - WITH THEME ============
 st.set_page_config(
     page_title="Fuel Tracker",
     layout="wide",
@@ -23,14 +23,14 @@ st.set_page_config(
     menu_items={'Get Help': None, 'Report a bug': None, 'About': "Fuel Tracking System"}
 )
 
-# ============  CSS  ============
+# ============ CUSTOM CSS - FIXED ============
 st.markdown("""
 <style>
     /* Hide default elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Main container */
+    /* Main container background */
     .main {
         padding: 20px !important;
         background-color: #f5f5f5 !important;
@@ -42,13 +42,22 @@ st.markdown("""
         padding: 20px !important;
     }
     
+    [data-testid="stSidebar"] [data-baseweb="base-input"] {
+        background-color: #2a2f4a !important;
+    }
+    
+    /* Sidebar text */
     [data-testid="stSidebar"] label {
-        color: #ddd !important;
+        color: white !important;
         font-weight: 600 !important;
     }
     
-    /* Radio buttons */
-    .stRadio > label {
+    [data-testid="stSidebar"] span {
+        color: #ddd !important;
+    }
+    
+    /* Radio button styling in sidebar */
+    [data-testid="stSidebar"] .stRadio > label {
         color: #ddd !important;
         font-weight: 600 !important;
         padding: 12px 15px !important;
@@ -58,18 +67,26 @@ st.markdown("""
         transition: all 0.3s !important;
     }
     
-    .stRadio > label:hover {
+    [data-testid="stSidebar"] .stRadio > label:hover {
         background-color: #667eea !important;
         color: white !important;
+    }
+    
+    [data-testid="stSidebar"] [data-baseweb="radio"] {
+        background-color: transparent !important;
     }
     
     /* Input fields */
     .stTextInput > div > div > input,
     .stNumberInput > div > div > input,
-    .stSelectbox > div > div > select {
+    .stSelectbox > div > div > select,
+    input[type="text"],
+    input[type="password"],
+    select {
         border-radius: 5px !important;
         border: 2px solid #ddd !important;
         padding: 10px !important;
+        background-color: #fff !important;
     }
     
     /* Buttons */
@@ -87,6 +104,14 @@ st.markdown("""
     .stButton > button:hover {
         background-color: #c82333 !important;
         box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
+    }
+    
+    /* Login page container */
+    .login-container {
+        background: white !important;
+        padding: 40px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
     }
     
     /* Metrics */
@@ -191,13 +216,6 @@ st.markdown("""
     h3 {
         color: #666 !important;
     }
-    
-    /* Divider */
-    hr {
-        margin: 20px 0 !important;
-        border: none !important;
-        border-top: 1px solid #eee !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -205,7 +223,7 @@ st.markdown("""
 if 'user' not in st.session_state:
     st.session_state.user = None
 
-# ============ EXPORT  ============
+# ============ EXPORT FUNCTIONS ============
 def export_to_excel(data):
     wb = Workbook()
     ws = wb.active
@@ -320,41 +338,57 @@ def export_to_word(data):
     output.seek(0)
     return output.getvalue()
 
-# ============ LOGIN  ============
+# ============ LOGIN PAGE - WITH COLORS ============
 if st.session_state.user is None:
+    # Add gradient background using markdown
+    st.markdown("""
+    <div style='position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                z-index: -1;'></div>
+    """, unsafe_allow_html=True)
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h1 style='text-align: center; color: #2c3e50;'> Fuel Tracker</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: #666;'>Fuel Entry & Management System</h3>", unsafe_allow_html=True)
-        st.markdown("---")
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        
+        # White container for login
+        st.markdown("""
+        <div style='background: white; padding: 40px; border-radius: 10px; 
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);'>
+            <h1 style='text-align: center; color: #667eea; margin-bottom: 5px;'> Fuel Tracker</h1>
+            <h3 style='text-align: center; color: #666; margin-bottom: 30px;'>Fuel Entry & Management System</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
         username = st.text_input("Username", key="login_user")
         password = st.text_input("Password", type="password", key="login_pass")
         
-        if st.button(" Login", use_container_width=True, key="login_btn"):
-            try:
-                response = supabase_client.table('users').select('*').eq('username', username).execute()
-                
-                if response.data and len(response.data) > 0:
-                    user = response.data[0]
-                    if user['password'] == password:
-                        st.session_state.user = user
-                        st.success(" Login successful!")
-                        st.rerun()
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+        with col_btn2:
+            if st.button(" Login", use_container_width=True, key="login_btn"):
+                try:
+                    response = supabase_client.table('users').select('*').eq('username', username).execute()
+                    
+                    if response.data and len(response.data) > 0:
+                        user = response.data[0]
+                        if user['password'] == password:
+                            st.session_state.user = user
+                            st.success(" Login successful!")
+                            st.rerun()
+                        else:
+                            st.error(" Invalid credentials")
                     else:
                         st.error(" Invalid credentials")
-                else:
-                    st.error(" Invalid credentials")
-            except Exception as e:
-                st.error(f" Error: {str(e)}")
+                except Exception as e:
+                    st.error(f" Error: {str(e)}")
 
 # ============ MAIN APP ============
 else:
     # SIDEBAR
     with st.sidebar:
         st.markdown(f"<div style='color: white; font-size: 24px; font-weight: bold; margin-bottom: 10px;'> Fuel Tracker</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='color: #aaa; font-size: 12px;'>User: <b>{st.session_state.user['username']}</b></div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='color: #aaa; font-size: 12px; margin-bottom: 20px;'>Role: <b>{st.session_state.user['role']}</b></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='color: #aaa; font-size: 12px;'>User: <b style='color: white;'>{st.session_state.user['username']}</b></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='color: #aaa; font-size: 12px; margin-bottom: 20px;'>Role: <b style='color: white;'>{st.session_state.user['role']}</b></div>", unsafe_allow_html=True)
         st.markdown("---")
         
         if st.button(" Logout", use_container_width=True):
@@ -363,13 +397,15 @@ else:
         
         st.markdown("---")
         
+        st.markdown("<div style='color: white; font-weight: bold; margin-bottom: 10px;'>Menu</div>", unsafe_allow_html=True)
         page = st.radio(
-            "Menu",
+            "Select Page",
             [" Dashboard", " Fuel Entry", " Reports", " Users", " Password"],
-            key="page_radio"
+            key="page_radio",
+            label_visibility="collapsed"
         )
     
-    # ============ DASHBOARD  ============
+    # ============ DASHBOARD PAGE ============
     if page == " Dashboard":
         st.title(" Dashboard")
         st.write("Real-time stock tracking by fuel type")
@@ -402,7 +438,7 @@ else:
             
             # Recent entries table
             st.subheader(" Recent Entries")
-            search = st.text_input(" Search Slip No, Vehicle, Fuel Type, Allocated To, Approved By...")
+            search = st.text_input("🔍 Search Slip No, Vehicle, Fuel Type, Allocated To, Approved By...")
             
             if search:
                 filtered = [e for e in entries_data if
@@ -515,7 +551,7 @@ else:
                         st.rerun()
                     except Exception as e:
                         if "duplicate key" in str(e).lower():
-                            st.warning(" This Slip No already exists as a Purchase. Try a different number or use Issue tab for different transaction.")
+                            st.warning(" This Slip No already exists as a Purchase. Try a different number.")
                         else:
                             st.error(f"Error: {str(e)}")
         
@@ -590,7 +626,7 @@ else:
                         st.rerun()
                     except Exception as e:
                         if "duplicate key" in str(e).lower():
-                            st.warning(" This Slip No already exists as an Issue. Try a different number or use Purchase tab for different transaction.")
+                            st.warning(" This Slip No already exists as an Issue. Try a different number.")
                         else:
                             st.error(f"Error: {str(e)}")
     
@@ -650,7 +686,7 @@ else:
                 else:
                     st.info(" No entries found")
             except Exception as e:
-                st.error(f" Error: {e}")
+                st.error(f"❌ Error: {e}")
     
     # ============ USERS PAGE ============
     elif page == " Users":
@@ -693,7 +729,7 @@ else:
         except Exception as e:
             st.error(f" Error: {e}")
     
-    # ============ PASSWORD  ============
+    # ============ PASSWORD PAGE ============
     elif page == " Password":
         st.title(" Change Password")
         st.write("Update your login password")
