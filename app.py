@@ -15,7 +15,7 @@ SUPABASE_URL = "https://yccutkrmflxapwtjngep.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljY3V0a3JtZmx4YXB3dGpuZ2VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDM5MzEsImV4cCI6MjEwMDQxOTkzMX0.DsWCR0tYq895So5oJWD7Jwia_HRVxO09Y9rv2_Wns9w"
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ============ PAGE CONFIG - WITH THEME ============
+# ============ PAGE CONFIG ============
 st.set_page_config(
     page_title="Fuel Tracker",
     layout="wide",
@@ -23,199 +23,13 @@ st.set_page_config(
     menu_items={'Get Help': None, 'Report a bug': None, 'About': "Fuel Tracking System"}
 )
 
-# ============ CUSTOM CSS - FIXED ============
+# ============ SIMPLE CSS - NO CONFLICTS ============
 st.markdown("""
 <style>
-    /* Hide default elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* Main container background */
-    .main {
-        padding: 20px !important;
-        background-color: #f5f5f5 !important;
-    }
-    
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: #1a1f3a !important;
-        padding: 20px !important;
-    }
-    
-    [data-testid="stSidebar"] [data-baseweb="base-input"] {
-        background-color: #2a2f4a !important;
-    }
-    
-    /* Sidebar text */
-    [data-testid="stSidebar"] label {
-        color: white !important;
-        font-weight: 600 !important;
-    }
-    
-    [data-testid="stSidebar"] span {
-        color: #ddd !important;
-    }
-    
-    /* Radio button styling in sidebar */
-    [data-testid="stSidebar"] .stRadio > label {
-        color: #ddd !important;
-        font-weight: 600 !important;
-        padding: 12px 15px !important;
-        border-radius: 5px !important;
-        margin: 8px 0 !important;
-        display: block !important;
-        transition: all 0.3s !important;
-    }
-    
-    [data-testid="stSidebar"] .stRadio > label:hover {
-        background-color: #667eea !important;
-        color: white !important;
-    }
-    
-    [data-testid="stSidebar"] [data-baseweb="radio"] {
-        background-color: transparent !important;
-    }
-    
-    /* Input fields */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div > select,
-    input[type="text"],
-    input[type="password"],
-    select {
-        border-radius: 5px !important;
-        border: 2px solid #ddd !important;
-        padding: 10px !important;
-        background-color: #fff !important;
-    }
-    
-    /* Buttons */
-    .stButton > button {
-        background-color: #dc3545 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 5px !important;
-        padding: 10px 20px !important;
-        font-weight: 700 !important;
-        width: 100% !important;
-        transition: all 0.3s !important;
-    }
-    
-    .stButton > button:hover {
-        background-color: #c82333 !important;
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
-    }
-    
-    /* Login page container */
-    .login-container {
-        background: white !important;
-        padding: 40px !important;
-        border-radius: 10px !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    /* Metrics */
-    [data-testid="stMetricValue"] {
-        font-size: 32px !important;
-        font-weight: bold !important;
-        color: #667eea !important;
-    }
-    
-    [data-testid="stMetricLabel"] {
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        color: #999 !important;
-        text-transform: uppercase !important;
-    }
-    
-    [data-testid="stMetric"] {
-        background: white !important;
-        padding: 20px !important;
-        border-radius: 10px !important;
-        border-left: 4px solid #667eea !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
-    }
-    
-    /* Tables */
-    [data-testid="stDataFrame"] {
-        font-size: 13px !important;
-    }
-    
-    table {
-        background-color: white !important;
-    }
-    
-    th {
-        background-color: #667eea !important;
-        color: white !important;
-        font-weight: 700 !important;
-        padding: 12px !important;
-    }
-    
-    td {
-        padding: 12px !important;
-        border-bottom: 1px solid #eee !important;
-    }
-    
-    tbody tr:hover {
-        background-color: #f9f9f9 !important;
-    }
-    
-    /* Messages */
-    .stSuccess {
-        background-color: #d4edda !important;
-        color: #155724 !important;
-        border-radius: 5px !important;
-        padding: 12px !important;
-    }
-    
-    .stError {
-        background-color: #f8d7da !important;
-        color: #721c24 !important;
-        border-radius: 5px !important;
-        padding: 12px !important;
-    }
-    
-    .stInfo {
-        background-color: #d1ecf1 !important;
-        color: #0c5460 !important;
-        border-radius: 5px !important;
-        padding: 12px !important;
-    }
-    
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px !important;
-        background-color: white !important;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 5px 5px 0px 0px !important;
-        padding: 12px 20px !important;
-        color: #666 !important;
-        font-weight: 600 !important;
-    }
-    
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        color: #667eea !important;
-        border-bottom: 3px solid #667eea !important;
-    }
-    
-    /* Headers */
-    h1 {
-        color: #2c3e50 !important;
-        font-size: 32px !important;
-        margin-bottom: 5px !important;
-    }
-    
-    h2 {
-        color: #2c3e50 !important;
-        font-size: 24px !important;
-    }
-    
-    h3 {
-        color: #666 !important;
-    }
+    .main { padding: 20px; }
+    h1 { color: #2c3e50; font-size: 32px; margin-bottom: 5px; }
+    h2 { color: #2c3e50; font-size: 24px; }
+    h3 { color: #666; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -338,78 +152,59 @@ def export_to_word(data):
     output.seek(0)
     return output.getvalue()
 
-# ============ LOGIN PAGE - WITH COLORS ============
+# ============ LOGIN PAGE ============
 if st.session_state.user is None:
-    # Add gradient background using markdown
-    st.markdown("""
-    <div style='position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                z-index: -1;'></div>
-    """, unsafe_allow_html=True)
-    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.title("⛽ Fuel Tracker")
+        st.write("Fuel Entry & Management System")
+        st.divider()
         
-        # White container for login
-        st.markdown("""
-        <div style='background: white; padding: 40px; border-radius: 10px; 
-                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);'>
-            <h1 style='text-align: center; color: #667eea; margin-bottom: 5px;'> Fuel Tracker</h1>
-            <h3 style='text-align: center; color: #666; margin-bottom: 30px;'>Fuel Entry & Management System</h3>
-        </div>
-        """, unsafe_allow_html=True)
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
         
-        username = st.text_input("Username", key="login_user")
-        password = st.text_input("Password", type="password", key="login_pass")
-        
-        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-        with col_btn2:
-            if st.button(" Login", use_container_width=True, key="login_btn"):
-                try:
-                    response = supabase_client.table('users').select('*').eq('username', username).execute()
-                    
-                    if response.data and len(response.data) > 0:
-                        user = response.data[0]
-                        if user['password'] == password:
-                            st.session_state.user = user
-                            st.success(" Login successful!")
-                            st.rerun()
-                        else:
-                            st.error(" Invalid credentials")
+        if st.button("🔐 Login", use_container_width=True):
+            try:
+                response = supabase_client.table('users').select('*').eq('username', username).execute()
+                
+                if response.data and len(response.data) > 0:
+                    user = response.data[0]
+                    if user['password'] == password:
+                        st.session_state.user = user
+                        st.success("✅ Login successful!")
+                        st.rerun()
                     else:
-                        st.error(" Invalid credentials")
-                except Exception as e:
-                    st.error(f" Error: {str(e)}")
+                        st.error("❌ Invalid credentials")
+                else:
+                    st.error("❌ Invalid credentials")
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
 
 # ============ MAIN APP ============
 else:
     # SIDEBAR
     with st.sidebar:
-        st.markdown(f"<div style='color: white; font-size: 24px; font-weight: bold; margin-bottom: 10px;'> Fuel Tracker</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='color: #aaa; font-size: 12px;'>User: <b style='color: white;'>{st.session_state.user['username']}</b></div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='color: #aaa; font-size: 12px; margin-bottom: 20px;'>Role: <b style='color: white;'>{st.session_state.user['role']}</b></div>", unsafe_allow_html=True)
-        st.markdown("---")
+        st.title("⛽ Fuel Tracker")
+        st.write(f"**User:** {st.session_state.user['username']}")
+        st.write(f"**Role:** {st.session_state.user['role']}")
+        st.divider()
         
-        if st.button(" Logout", use_container_width=True):
+        if st.button("🔴 Logout", use_container_width=True):
             st.session_state.user = None
             st.rerun()
         
-        st.markdown("---")
+        st.divider()
         
-        st.markdown("<div style='color: white; font-weight: bold; margin-bottom: 10px;'>Menu</div>", unsafe_allow_html=True)
         page = st.radio(
-            "Select Page",
-            [" Dashboard", " Fuel Entry", " Reports", " Users", " Password"],
-            key="page_radio",
-            label_visibility="collapsed"
+            "Menu",
+            ["📊 Dashboard", "✏️ Fuel Entry", "📈 Reports", "👥 Users", "🔑 Password"]
         )
     
     # ============ DASHBOARD PAGE ============
-    if page == " Dashboard":
-        st.title(" Dashboard")
+    if page == "📊 Dashboard":
+        st.title("📊 Dashboard")
         st.write("Real-time stock tracking by fuel type")
-        st.markdown("---")
+        st.divider()
         
         try:
             entries = supabase_client.table('fuel_entries').select('*').execute()
@@ -423,7 +218,7 @@ else:
                 allocated = sum([e.get('issue_quantity', 0) or 0 for e in fuel_entries if e['transaction_type'] == 'Issue'])
                 total = old_stock + purchased - allocated
                 
-                st.subheader(f" {fuel_type}")
+                st.subheader(f"💧 {fuel_type}")
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
                     st.metric("OLD STOCK", f"{old_stock:.2f}L")
@@ -434,10 +229,10 @@ else:
                 with col4:
                     st.metric("TOTAL", f"{total:.2f}L")
                 
-                st.markdown("---")
+                st.divider()
             
             # Recent entries table
-            st.subheader(" Recent Entries")
+            st.subheader("📋 Recent Entries")
             search = st.text_input("🔍 Search Slip No, Vehicle, Fuel Type, Allocated To, Approved By...")
             
             if search:
@@ -457,42 +252,41 @@ else:
                 st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
                 
                 # DELETE SECTION
-                st.markdown("---")
-                st.subheader(" Delete Entries")
+                st.divider()
+                st.subheader("🗑️ Delete Entries")
                 delete_col1, delete_col2, delete_col3 = st.columns([2, 2, 1])
                 with delete_col1:
                     slip_to_delete = st.selectbox("Select Slip No to delete:", df['slip_no'].unique(), key="delete_slip")
                 with delete_col2:
                     entry_to_delete = st.selectbox("Transaction Type:", df['transaction_type'].unique(), key="delete_type")
                 with delete_col3:
-                    st.write("")
-                    if st.button(" Delete", use_container_width=True, key="delete_btn"):
+                    if st.button("🗑️ Delete", use_container_width=True, key="delete_btn"):
                         try:
                             entry_id = df[(df['slip_no'] == slip_to_delete) & (df['transaction_type'] == entry_to_delete)]['id'].values
                             if len(entry_id) > 0:
                                 supabase_client.table('fuel_entries').delete().eq('id', int(entry_id[0])).execute()
-                                st.success(" Entry deleted successfully!")
+                                st.success("✅ Entry deleted successfully!")
                                 st.rerun()
                             else:
-                                st.error(" Entry not found")
+                                st.error("❌ Entry not found")
                         except Exception as e:
-                            st.error(f" Error deleting: {e}")
+                            st.error(f"❌ Error deleting: {e}")
             else:
-                st.info(" No entries found")
+                st.info("📭 No entries found")
                 
         except Exception as e:
-            st.error(f" Error: {e}")
+            st.error(f"❌ Error: {e}")
     
     # ============ FUEL ENTRY PAGE ============
-    elif page == " Fuel Entry":
-        st.title(" Add Fuel Entry")
+    elif page == "✏️ Fuel Entry":
+        st.title("✏️ Add Fuel Entry")
         st.write("Record PURCHASE or ISSUE transactions")
-        st.markdown("---")
+        st.divider()
         
-        tab1, tab2 = st.tabs([" Purchase Fuel", " Issue to Vehicle"])
+        tab1, tab2 = st.tabs(["🛢️ Purchase Fuel", "🚗 Issue to Vehicle"])
         
         with tab1:
-            st.subheader(" Purchase Fuel")
+            st.subheader("🛢️ Purchase Fuel")
             
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -527,9 +321,9 @@ else:
             with col2:
                 remarks = st.text_input("Remarks", key="rm_p")
             
-            if st.button(" Save Purchase", use_container_width=True, key="save_p"):
+            if st.button("✅ Save Purchase", use_container_width=True, key="save_p"):
                 if not slip_no or not fuel_type:
-                    st.error(" Please fill required fields")
+                    st.error("❌ Please fill required fields")
                 else:
                     try:
                         supabase_client.table('fuel_entries').insert({
@@ -546,17 +340,17 @@ else:
                             'approved_by': approved_by,
                             'remarks': remarks
                         }).execute()
-                        st.success(" Purchase saved successfully!")
+                        st.success("✅ Purchase saved successfully!")
                         st.balloons()
                         st.rerun()
                     except Exception as e:
                         if "duplicate key" in str(e).lower():
-                            st.warning(" This Slip No already exists as a Purchase. Try a different number.")
+                            st.warning("⚠️ This Slip No already exists as a Purchase. Try a different number.")
                         else:
                             st.error(f"Error: {str(e)}")
         
         with tab2:
-            st.subheader(" Issue to Vehicle")
+            st.subheader("🚗 Issue to Vehicle")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -596,9 +390,9 @@ else:
             with col4:
                 remarks = st.text_input("Remarks", key="rm_i")
             
-            if st.button(" Save Issue", use_container_width=True, key="save_i"):
+            if st.button("✅ Save Issue", use_container_width=True, key="save_i"):
                 if not slip_no or not fuel_type or not vehicle_no or not issue_quantity:
-                    st.error(" Please fill required fields")
+                    st.error("❌ Please fill required fields")
                 else:
                     try:
                         supabase_client.table('fuel_entries').insert({
@@ -621,20 +415,20 @@ else:
                             'approved_by': approved_by,
                             'remarks': remarks
                         }).execute()
-                        st.success(" Issue saved successfully!")
+                        st.success("✅ Issue saved successfully!")
                         st.balloons()
                         st.rerun()
                     except Exception as e:
                         if "duplicate key" in str(e).lower():
-                            st.warning(" This Slip No already exists as an Issue. Try a different number.")
+                            st.warning("⚠️ This Slip No already exists as an Issue. Try a different number.")
                         else:
                             st.error(f"Error: {str(e)}")
     
     # ============ REPORTS PAGE ============
-    elif page == " Reports":
-        st.title(" Reports & Export")
+    elif page == "📈 Reports":
+        st.title("📈 Reports & Export")
         st.write("View, filter, and export transactions")
-        st.markdown("---")
+        st.divider()
         
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
@@ -646,11 +440,10 @@ else:
         with col4:
             date_to = st.date_input("To Date", key="dt_r")
         with col5:
-            st.write("")
-            if st.button(" Filter", use_container_width=True, key="filter_r"):
+            if st.button("🔍 Filter", use_container_width=True, key="filter_r"):
                 st.session_state.apply_filter = True
         
-        if st.session_state.get('apply_filter', False) or st.button(" Load All Data"):
+        if st.session_state.get('apply_filter', False) or st.button("📊 Load All Data"):
             try:
                 entries = supabase_client.table('fuel_entries').select('*').execute()
                 if entries.data:
@@ -661,39 +454,39 @@ else:
                     if type_filter != "All":
                         df = df[df['transaction_type'] == type_filter]
                     
-                    st.markdown("---")
-                    st.subheader(f" Found {len(df)} records")
+                    st.divider()
+                    st.subheader(f"📋 Found {len(df)} records")
                     st.dataframe(df, use_container_width=True, hide_index=True)
                     
-                    st.markdown("---")
-                    st.subheader(" Export Options")
+                    st.divider()
+                    st.subheader("📥 Export Options")
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
                         excel_data = export_to_excel(entries.data)
-                        st.download_button(" Excel", excel_data, "fuel_report.xlsx",
+                        st.download_button("📊 Excel", excel_data, "fuel_report.xlsx",
                                          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                          use_container_width=True)
                     with col2:
                         pdf_data = export_to_pdf(entries.data)
-                        st.download_button(" PDF", pdf_data, "fuel_report.pdf",
+                        st.download_button("📄 PDF", pdf_data, "fuel_report.pdf",
                                          "application/pdf", use_container_width=True)
                     with col3:
                         word_data = export_to_word(entries.data)
-                        st.download_button(" Word", word_data, "fuel_report.docx",
+                        st.download_button("📝 Word", word_data, "fuel_report.docx",
                                          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                                          use_container_width=True)
                 else:
-                    st.info(" No entries found")
+                    st.info("📭 No entries found")
             except Exception as e:
                 st.error(f"❌ Error: {e}")
     
     # ============ USERS PAGE ============
-    elif page == " Users":
-        st.title(" Manage Users")
-        st.markdown("---")
+    elif page == "👥 Users":
+        st.title("👥 Manage Users")
+        st.divider()
         
-        st.subheader(" Create New User")
+        st.subheader("➕ Create New User")
         col1, col2, col3 = st.columns(3)
         with col1:
             new_username = st.text_input("Username", key="nu")
@@ -704,7 +497,7 @@ else:
         
         if st.button("Create User", use_container_width=True, key="cu"):
             if not new_username or not new_password:
-                st.error(" Please fill all fields")
+                st.error("❌ Please fill all fields")
             else:
                 try:
                     supabase_client.table('users').insert({
@@ -712,28 +505,28 @@ else:
                         'password': new_password,
                         'role': new_role
                     }).execute()
-                    st.success(" User created!")
+                    st.success("✅ User created!")
                     st.rerun()
                 except Exception as e:
-                    st.error(f" Error: {e}")
+                    st.error(f"❌ Error: {e}")
         
-        st.markdown("---")
-        st.subheader(" All Users")
+        st.divider()
+        st.subheader("👥 All Users")
         try:
             users = supabase_client.table('users').select('*').execute()
             if users.data:
                 df = pd.DataFrame(users.data)
                 st.dataframe(df[['username', 'role', 'created_at']], use_container_width=True, hide_index=True)
             else:
-                st.info(" No users found")
+                st.info("📭 No users found")
         except Exception as e:
-            st.error(f" Error: {e}")
+            st.error(f"❌ Error: {e}")
     
     # ============ PASSWORD PAGE ============
-    elif page == " Password":
-        st.title(" Change Password")
+    elif page == "🔑 Password":
+        st.title("🔑 Change Password")
         st.write("Update your login password")
-        st.markdown("---")
+        st.divider()
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -743,7 +536,7 @@ else:
             
             if st.button("Update Password", use_container_width=True, key="up"):
                 if new_password != confirm_password:
-                    st.error(" Passwords do not match")
+                    st.error("❌ Passwords do not match")
                 else:
                     try:
                         response = supabase_client.table('users').select('*').eq('username', st.session_state.user['username']).execute()
@@ -751,8 +544,8 @@ else:
                             supabase_client.table('users').update({
                                 'password': new_password
                             }).eq('id', st.session_state.user['id']).execute()
-                            st.success(" Password changed!")
+                            st.success("✅ Password changed!")
                         else:
-                            st.error(" Old password incorrect")
+                            st.error("❌ Old password incorrect")
                     except Exception as e:
-                        st.error(f" Error: {e}")
+                        st.error(f"❌ Error: {e}")
