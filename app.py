@@ -23,13 +23,16 @@ st.set_page_config(
     menu_items={'Get Help': None, 'Report a bug': None, 'About': "Fuel Tracking System"}
 )
 
-# ============ SIMPLE CSS - NO CONFLICTS ============
+# ============ MINIMAL CSS - ONLY FOR LAYOUT ============
 st.markdown("""
 <style>
     .main { padding: 20px; }
-    h1 { color: #2c3e50; font-size: 32px; margin-bottom: 5px; }
-    h2 { color: #2c3e50; font-size: 24px; }
-    h3 { color: #666; }
+    .metric-box {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -157,11 +160,11 @@ if st.session_state.user is None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.title("⛽ Fuel Tracker")
-        st.write("Fuel Entry & Management System")
+        st.markdown("### Fuel Entry & Management System")
         st.divider()
         
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+        username = st.text_input("Username", placeholder="Enter username")
+        password = st.text_input("Password", type="password", placeholder="Enter password")
         
         if st.button("🔐 Login", use_container_width=True):
             try:
@@ -185,8 +188,8 @@ else:
     # SIDEBAR
     with st.sidebar:
         st.title("⛽ Fuel Tracker")
-        st.write(f"**User:** {st.session_state.user['username']}")
-        st.write(f"**Role:** {st.session_state.user['role']}")
+        st.markdown(f"👤 **{st.session_state.user['username']}**")
+        st.markdown(f"🎯 {st.session_state.user['role']}")
         st.divider()
         
         if st.button("🔴 Logout", use_container_width=True):
@@ -196,7 +199,7 @@ else:
         st.divider()
         
         page = st.radio(
-            "Menu",
+            "📋 Menu",
             ["📊 Dashboard", "✏️ Fuel Entry", "📈 Reports", "👥 Users", "🔑 Password"]
         )
     
